@@ -9,6 +9,8 @@ from Step1_Segment import segment_Line,Step1_Segment
 from Step2_ToBunch import seg2Bunch,Step2_ToBunch
 from Step3_TFIDFSpace import bunch2Space,Step3_TFIDFSpace
 import numpy as np
+import cv2
+
 def Train():
         Step1_Segment()
         Step2_ToBunch()
@@ -27,17 +29,22 @@ def Train():
 def Predict(clf,vecLen,text):
         if(text==''):
                 return ''
-        segs = segment_Line(text)
-        bunch=seg2Bunch(segs)
-        space = bunch2Space(bunch)
-        data=space.tdm
+        if(len(text)<2):
+                text=text+text
+        try:
+                segs = segment_Line(text)
+                bunch=seg2Bunch(segs)
+                space = bunch2Space(bunch)
+                data=space.tdm
 
-        testData=np.zeros((1,vecLen))
-        for i in range(data.shape[1]):
-                testData[0,i]=data[0,i]
-        
-        predicted = clf.predict(testData)
-        return predicted
+                testData=np.zeros((1,vecLen))
+                for i in range(data.shape[1]):
+                        testData[0,i]=data[0,i]
+                
+                predicted = clf.predict(testData)
+                return predicted
+        except Exception as err:
+                return '0'
 
 def SaveText(fileName,text):
         if(text!=''):
@@ -51,12 +58,18 @@ def ReTrain(t0,t1,t2,t3):
         SaveText('train_corpus/2/2',t2)
         SaveText('train_corpus/3/3',t3)
         return Train()
+def ShowImg(classIndex):
+        fileName='Images/'+str(classIndex[0])+'.jpg'
+        img=cv2.imread(fileName)
+        cv2.imshow('Recommended',img)
+        cv2.waitKey(5000)
+        cv2.destroyWindow('Recommended')
 
 def predictItem(clf,len,text):
         result=Predict(clf,vecLen,text)
-        print('推荐类别：')
+        ShowImg(result)
+        print('Recommended Class:')
         print(result)
-        
 
 clf,vecLen=Train()
 
@@ -67,22 +80,21 @@ text1=''
 text2=''
 text3=''
 while(True):
+        text=input("Please enter sentence(Q for exit): ")
         if(text=='Q' or text=='q'):
                 break
 
         if(num==10):
-                print("正在更新分类器，请耐心等待...")
+                print("Updating classifier, please wait patiently...")
                 clf,vecLen=ReTrain(text0,text1,text2,text3)
-                print("更新完成")
+                print("Update done")
         
-        text=input("请输入句子(输入Q退出): ")
-        print(text)
+        
         predictItem(clf,vecLen,text)  
-
         flag=False
         while(not flag):
                 flag=True
-                classIndex=input("请输入实际类别(0-3): ")
+                classIndex=input("Please enter the real class(0-3): ")
                 if(classIndex=='0'):
                         text0=text0+','+text
                         num+=1                
@@ -97,6 +109,6 @@ while(True):
                         num+=1
                 else:
                         flag=False
-                        print('请输入正确的类别')
+                        print('Please enter the right class index:')
                 
 
